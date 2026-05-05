@@ -1,0 +1,512 @@
+### Data Model NA64
+---
+schema_version: 100
+
+options:
+  # should getters / setters be prefixed with get / set?
+  getSyntax: True
+  # should POD members be exposed with getters/setters in classes that have them as members?
+  exposePODMembers: False
+  includeSubfolder: True
+
+## Components - Very simple types, that are used throughout the Datatypes
+## Datatypes - The data types that are defined in EDM4hep
+## Links - The available links between different data types
+## Generator related (meta-)data - Data types related to generator metadata
+## Interfaces - Abstractions for accessing different types by a shared set of properties
+  
+## TODO do we need double for position or float is enough?  
+  
+datatypes:
+    
+  ############## APV detector #########################################################
+  #  APV chip is analogue demultiplexer generally used to communicate a vast
+  #  number of analog wires into sampling ADC input. Though the ADC is
+  #  generally a SADC chip we distinguish between SADC and APV managed detectors
+  #  following convention of original COMPASS/NA64 DAQ data decoding library.
+  #
+  #  For reconstruction, individual APV hits are usually joined together within
+  #  a cluster that then represents a fact of ionazing particle passing through
+  #  the detector's active medium.
+  #
+  #  These clusters then used in tracking algorithms to reconstruct particle
+  #  tracks.
+
+  edm4na64::RawDataAPV:
+    Description:  'Raw data of APV digit'
+    Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
+    Members:
+      - uint16_t               wireNo      //  Triggered wire number (detector's channel) TODO is default std::numeric_limits<uint16_t>::max() needed?
+      - uint16_t               chip        // chip ID wrt DDD DAQ
+      - uint16_t               srcID       // source ID wrt DDD DAQ
+      - uint16_t               adcID       // adc ID wrt DDD DAQ
+      - uint16_t               chipChannel // channel number inside chip (before remapping)
+      - uint32_t               timeTag     // Time with the respect to trigger time
+      - std::array<int32_t, 3> samples     // Measured amplitude samples on a wire TODO set default to [std::numeric_limits<uint32_t>::max()]x3?
+
+  edm4na64::APVHit:
+    Description: 'Representation of a hit on APV-based detector entity.'
+    Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
+    Members:
+      - double maxCharge // Hit max charge wrt APV waveform
+      - double timeRise  // Time of rising front TODO seemed to be not used; remove?
+      - double a02       // APV samples amplitude ratio a0/a2
+      - double a12       // APV samples amplitude ratio a1/a2
+      - double t02       // Tangent values of raising front, at a0 and a2 TODO More doc on it
+      - double t12       // Tangent values of raising front, at a1 and a2 TODO More doc on it
+      - double t02sigma  // Error estimation of tangent raising front a0-a2 TODO More doc on it
+      - double t12sigma  // Error estimation of tangent raising front a1-a2 TODO More doc on it
+      - double time      // Estimated hit time, [SADC sample num]
+      - double timeError // Error of hit time estimation, [SADC sample num]
+    OneToOneRelations:
+      - edm4na64::RawDataAPV rawData // Hit raw data (as got from DDD digit)
+    
+  edm4na64::APVCluster:
+    Description: 'Represents a group of hits on APV-based detector.'
+    Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
+    Members:
+      - double            position       // Coordinate of cluster's center, wire number units
+      - double            positionError  // Coordinate uncertainty, wire units
+      - double            charge         // Cluster charge sum (unnormed), sum of all hit's amplitude measurements
+      - edm4hep::Vector3f mcTruePosition // True position of track intersection
+      - double            time           // Cluster time TODO units? ns?
+      - double            timeError      // Cluster time estimated error ODO units? ns?
+    OneToManyRelations:
+      - edm4na64::APVHit  hits           // Basic APV hits definign the cluster
+    ExtraCode:
+      declaration: |
+        /// Returns number of hits included in cluster.
+        auto getSize() const { return hits_size(); }
+        /// Returns average charge value.
+        auto avrgCharge() const { return getCharge() / hits_size(); }  
+
+  ############## F1 TDC hit #########################################################
+  # Representation of hit on the F1-chip based detector
+
+  edm4na64::RawDataF1:
+    Description: 'Raw data of an F1 digit'
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - uint16_t sourceID        // DAQ channel source ID
+      - uint16_t portID          // DAQ port ID
+      - int32_t  channel         // DAQ detector channel number
+      - int32_t  channelPosition // channel position
+      - int32_t  time            // Time associated with the channel
+      - double   timeUnit        // Time unit
+      - double   timeDecoded     // time in ns wrt trigger time"
+      - double   timeReference   // ...
+
+  edm4na64::F1Hit:
+    Description: "Representation of a hit on F1-based detector entity"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - double  hitPosition // Reconstructed position of hit
+    OneToOneRelations:  
+      - edm4na64::RawDataF1 rawData // Raw data as was decoded from DAQ for F1 chip
+
+  ############## SADN detector #########################################################
+  # The NA64/NA58 standard sampling ADC chip (SADC) performs sampling
+  # analog-to-digital conversion of many detectors signals. Once triggered, it
+  # measures the voltage on its input 16 times with time interval of 25ns.
+  # In NA64 DAQ a pair of chips are always enabled in parallel at a single
+  # channel with phase shift of ~12.5ns providing 32 samples with 12.5ns
+  # interval. Each chip has its own zero, but measurement scale is expected
+  # to be the same for both.
+
+  edm4na64::MoyalSADCWfFitParameters:  
+    Description: 'SADC waveform fitting parameters for Moyal function'
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                mu        // Centers of peaks
+      - float                sigma     // Widths of peaks
+      - float                S         // Scaling factor
+      - std::array<float, 2> interval  // Validity interval of this Moyal fit
+
+  # TODO same as before?!?!?
+  edm4na64::GaussianSADCFitParameters:  
+    Description: "Results/estimations of (pre-)fitting peak(s) with Gaussian PDF"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                mu        // Centers of peaks"
+      - float                sigma     // Widths of peaks"
+      - float                S         // Scaling factor"
+      - std::array<float, 2> interval  // Validity interval of this Gaussian (pre-)fit"
+
+  edm4na64::MSADCDFFTCoefficients:
+    Description: "Discrete fourier transform of SADC signal"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:  
+      - std::array<double, 16> real // Real part of signal Fourier transform coefficients
+      - std::array<double, 16> imag // Imag. part of signal Fourier transform coefficients, 1st elem is reserved
+
+  edm4na64::MSADCPeak:  # TODO: rename to SADCPulse
+    Description: "Maximum of (M)SADC detector waveform"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float  time              // Waveform peak's time estimate
+      - float  timeErr           // Waveform peak's time estimate error
+      - int    timeClusterLabel  // Waveform max time cluster label
+      - float  amp               // Waveform peak's amp/square estimate
+      - float  ampErr            // Waveform peak's amp/square estimate error
+      - float  sumCoarse         // Waveform peak's coarse integral estimate (usually, by interpolation)
+      - float  sumFine           // Waveform peak's fine integral estimate (usually, by fitting with model)
+      - float  sumFineErr        // Waveform peak's fine integral estimate error
+      - float  eDep              // Energy estimate for this pulse
+      - float  eDepErr           // Error of energy estimate for this pulse
+      - double chi2              // Peak fitting chi2
+      - int    ndf               //  Peak fitting NDF
+      - int    lastFitStatusCode //  Encoded fit status (contextual).
+    OneToOneRelations:  
+      - edm4na64::MoyalSADCWfFitParameters moyalFit // Results of peak fitting with Moyal function.  
+    ExtraCode:
+      declaration: |
+        /// Ratio b/w coarse and fine integral estimates
+        auto sqRatio() const { return getSumCoarse() / getSumFine(); }
+
+  # Can we merge them togheter in a more general waveform typetype?
+  edm4na64::MSADCWaveform:
+    Description: "MSADC waveform -- always 32 samples in NA64, two baselines (pedestals), 12.5ns interval"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - std::array<float, 32> wave      // Array of measured waveform samples
+      - std::array<float, 2>  pedestals // ADC amplitude pedestal values (zeroes) for even and odd sampler.
+
+  edm4na64::WBWaveform:
+    Description: "Genova WaveBoard sampling ADC, variable number of samples, variable sampling time"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float samplingTime [ns] // ns per sample
+      - float baseline          // baseline value for
+    VectorMembers:
+      - float wave              // Array of measured waveform samples TODO was a map?
+
+  edm4na64::WaveForm:
+    Description: "WaveForm data. \n
+                  SADC waveform -- always 32 samples in NA64, two baselines (pedestals), 12.5ns interval \
+                  Genova WaveBoard sampling ADC, variable number of samples, variable sampling time"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                 samplingTime {12.5} [ns] // ns per sample
+      - std::array<float, 2>  pedestals  {0,0}       // ADC amplitude pedestal values (zeroes) for even and odd sampler.
+      - float                 baseline                 // baseline value for
+    VectorMembers:
+      - float                 wave                     // Array of measured waveform samples 
+
+  edm4na64::RawDataSADC:
+    Description: "Raw SADC waveform and subsidiary related information."
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:  
+      - float                           sum          // Computed sum of the waveform, number of channels
+      - uint16_t                        maxSample    // Number of waveform's sample considered as global maximum.
+      - float                           maxAmp       // Maximum of the waveform in raw SADC units.
+      - float                           maxAmpError  // Error of the waveform amplitude max. in raw SADC units.
+      - float                           canBeZero    // Zero probability measure (0-1)
+      - float                           ledCorr      // Correction by LED in use, ratio
+      - float                           calibCoeff   // Calibration coefficient in use, chan/MeV
+      - float                           ampThreshold // Peak-selection threshold, chan
+    OneToOneRelations:
+      - edm4na64::MSADCDFFTCoefficients fft          // Discrete Fourer transform results
+      - edm4na64::WaveForm              samples      // Raw samples data.        
+    OneToManyRelations:
+      - edm4na64::MSADCPeak             maxima       //  Peaks found in the waveform, used in reconstruction.
+      
+    ExtraCode:
+      includes: "#include <edm4na64/WaveForm.h>"
+      declaration: |
+        /// Returns number of samples kept; returns zero on failure
+        auto nSamples() const { return getSamples().wave_size(); }
+        /// Returns even pedestal value (for sample 0, 2, 4 ...)
+        auto pedestalEven() const { return getSamples().getPedestals(0); }
+        /// Returns odd pedestal value (for sample 1, 3, 5 ...)                             
+        auto pedestalOdd() const { return getSamples().getPedestals(1); }
+        /// Calculates ratio between sum and max. amplitude
+        auto chargeVsMaxAmpRatio() const { return getSum() / getMaxAmp(); }
+
+  edm4na64::SADCHit:
+    Description: "Representation of a hit on SADC-based detector entity."
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                 eDep      // Reconstructed energy deposition, MeV.
+      - float                 eDepError // Error estimation of reconstructed energy deposition (sigma), MeV
+      - float                 time      // Reconstructed time of hit, nanoseconds
+      - float                 timeError // Estimation of reconstructed time error (sigma), nanoseconds
+    OneToOneRelations:
+      - edm4na64::RawDataSADC rawData   // Hit raw data (as got from DDD digit)
+
+  ############## STRAW detector #########################################################
+  # STRAW detectors are used for tracking in NA64. They are listened by a
+  # dedicated NA64-specific DAQ entity (called "NA64TDC").
+
+  edm4na64::StwTDCRawData:
+    Description: "Raw hit data on straw detector hit; managed by dedicated chip"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:  
+      - uint16_t wireNo      // Triggered wire number (physical, decoded)
+      - uint16_t time        // Time on a wire (internal units)
+      - double   timeDecoded // Time in ns with the respect to trigger time
+
+  emd4na64::StwMCInfo:
+    Description: "MC information for a Straw hit"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - edm4hep::Vector3f entryPoint    // global coordinates of entry point
+      - edm4hep::Vector3f exitPoint     // global coordinates of exit point
+      - double            eDep          // energy deposition of incident particle
+    # This is duplicated in TrackPoint
+      - float             trackE        // energy of initiating track
+      - int               particlePDG   // PDG code of initiating particle
+      - int               geant4TrackID // Geant4 track ID
+      - float             r             // distance according to MC geometry
+      - float             u             // measured (local) coordinate according to MC geometry
+
+  edm4na64::StwTDCHit:
+    Description: "Hit on straw detector"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                   distance      // estimated by time (ambiguous) distance from the wire (isochrone surface radius)
+      - float                   distanceError // error of distance estimation
+      - float                   correctedTime // Time corrected for T0
+    OneToOneRelations:
+      - edm4na64::StwTDCRawData rawData       // Raw data of the straw hit
+      - emd4na64::StwMCInfo     mcInfo        // A "true" MC information          
+
+  ############## CALO detector #########################################################
+  # The calorimeter assembly energy deposition sum. May be not unique on event
+  # to facilitate pile-up separation.
+
+  edm4na64::CaloHit:
+    Description: 'Represents a group of SADC hits in the calorimeter.
+                  May imply different hit grouping strategies. Associated hits may be
+                  considered partially (for instance, if time cluster label is set for the
+                  this tCaloHit instamce, probably only eponymous pulses were considered
+                  in the hit).'
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - int     timeClusterLabel // Time cluster label, may be not set
+      - double  eDep             // Energy deposition sum, MeV
+      - double  eDepError        // Estimated energy deposition's error
+      - double  time             // Mean time
+      - double  timeStddev       // Time standard deviation (of hits)
+    OneToManyRelations:
+      - edm4na64::SADCHit hits // Elementary hits summed up into this calo hit
+    ExtraCode:
+      declaration: |
+        /// Returns number of SADC hits
+        auto getnHits() const { return hits_size(); }
+
+  ############## Track #########################################################
+  # A (reconstructed) particle track data declaration.
+
+  edm4na64::DriftDetScoreFeatures:
+    Description: "Additional features for track scores on drift detectors; aux data for drift-like detectors"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - float                distance [cm]      // Estimated distance, cm
+      - float                distanceError [cm] //  Error of distance estimation, cm
+      - float                maxDistance [cm]   // max distance (cm) from the wire; typically a wire's stride
+      - std::array<float, 6> wireCoordinates    // wire spatial coordinates (two endpoints)
+      - float                sideHitUError      // unbiased error on other side of isochrone
+      - float                sideHitBError      // biased error on other side of isochrone
+      - float                sideWeight         // tracking weight of other side isochrone
+      - std::array<float, 3> uError             // residuals wrt drift center (e.g. wire)
+
+  edm4na64::MCTrueTrackScore:
+    Description: "True parameters of the generated track score"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - edm4hep::Vector3f globalPosition // Unsmeared true intersection 3D point that generated this score
+      - int               geant4TrackID  // (only for MC) Geant4 track ID for this score
+
+  edm4na64::TrackScore:
+    Description: "A particle hit point representation
+                 _Track score_ is a helper object representing set of ra measurement (or
+                 set of raw measurements) bound together to represent a spatial item that
+                 can become a subject of track fitting.
+                 Keeps references to raw measurements (hits) together with DRS-normalized
+                 coordinates and uncertainties."
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - edm4hep::Vector3f               lR       // Local track (point) coordinates, up to three u, v, w, normalized to (-0.5/0.5)"
+      - edm4hep::Vector3f               gR       // Assumed global coordinates of track point, MRS x, y, z, [cm]"
+      - edm4hep::Vector3f               lRErr    // Local track uncertainties, up to three u, v, w, normalized"
+      - float                           time     // Hit time, global to event (averaged on hits or provided by MC)
+    OneToOneRelations:
+      - edm4na64::DriftDetScoreFeatures driftFts // Supplementary data for drift detectors.
+      - edm4na64::MCTrueTrackScore      mcTruth  // Monte-Carlo true values            
+    OneToManyRelations: # TODO 1-m or 1-1 ?
+      - edm4na64::APVCluster            apvcHitsRefs  // A cluster on the APV detector
+      - edm4na64::StwTDCHit             stwHitsRefs   // An straw hit
+      - edm4na64::CaloHit               caloHitsRefs  // A calorimeter measurement
+      - edm4na64::F1Hit                 f1HitsRefs    // Hit provided by F1 chip (typically, BMS)
+      - edm4na64::TrackScore            scoreHitsRefs // Another score TODO ??? 
+    ExtraCode:
+      declaration: |
+        /// Local U of the measurement
+        auto u() { return getLR()[0]; }
+        /// Local V of the measurement
+        auto v() { return getLR()[1]; }
+        /// Local W of the measurement
+        auto w() { return getLR()[2]; }
+        /// Local uncertainty by U of the measurement
+        auto uE() { return getLRErr()[0]; }
+        /// Local uncertainty by V of the measurement
+        auto vE() { return getLRErr()[1]; }
+        /// Local uncertainty by W of the measurement
+        auto wE() { return getLRErr()[2]; }
+
+  edm4na64::ScoreFitInfo:
+    Description: "Track-to-score association object
+                  Association (shimming) class binding track score with certain track object.
+                  Maintains set of information related to local fit object i.e. local coordinates,
+                  tangents, etc."
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - edm4hep::Vector3f    lR      // Local track fit coordinates, metric
+      - std::array<float, 3> lRUErr  // Unbiased errors of the local coordinates, DRS, up to three, u, v, w, normalized
+      - std::array<float, 3> lRBErr  // Biased errors of the local coordinates, DRS, up to three, u, v, w, normalized    
+      - std::array<float, 3> lTan    // Track tangent(s) at intersection point, DRS
+      - float                qop     // Charge over momentum, [GeV/c]
+      - float                time    // Estimated fit time, TODO GenFit2 RK units?
+      - float                weight  // Weight for track fit, if appliable
+    OneToOneRelations:              
+      - edm4na64::TrackScore score   // Reference to subject track score object
+    ExtraCode:
+      declaration: |
+        /// Biased residual by U, cm
+        auto biasedResidualU() const { return getLRBErr()[0]; }
+        /// Biased residual by V, cm
+        auto biasedResidualV() const { return getLRBErr()[1]; }
+        /// Biased residual by W, cm
+        auto biasedResidualW() const { return getLRBErr()[2]; }
+        /// Unbiased residual by U, cm
+        auto unbiasedResidualU() const { return getLRUErr()[0]; }
+        /// Unbiased residual by V, cm
+        auto unbiasedResidualV() const { return getLRUErr()[1]; }
+        /// Unbiased residual by W, cm
+        auto unbiasedResidualW() const { return getLRUErr()[2]; }
+        /// First DRS tangent of track at intersection point
+        auto tanU() const { return getLTan()[0];  }
+        /// Second DRS tangent of track at intersection point
+        auto tanV() const { return getLTan()[1];  }
+        /// Third DRS tangent of track at intersection point
+        auto tanW() const { return getLTan()[1];  }
+        /// Local U of the measurement cn
+        auto u() { return getLR()[0]; }
+        /// Local V of the measurement cm
+        auto v() { return getLR()[1]; }
+        /// Local W of the measurement cm
+        auto w() { return getLR()[2]; }    
+
+  edm4na64::TrackFitInfo:
+    Description: "General information on track fitting results"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - edm4hep::Vector3f    positionSeed // Initial position of the particle
+      - edm4hep::Vector3f    momentumSeed // Initial momentum of the particle motion (direction vector)
+      - edm4hep::CovMatrix3f covarSeed    // Initial covariance matrix
+      - float                chi2         // chi-squared value of track fit
+      - int32_t              ndf          // Number of degrees of freedom of track fit
+      - float                pval         // p-value of track fitting
+    ExtraCode:
+      declaration: |
+        /// chi^2/NDF value
+        auto chi2ndf() const { return getChi2()/getNdf(); }
+
+  edm4na64::Track:
+    Description: "Particle track representation"
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - double                 momentum    // Initial momentum of the track
+      - int                    pdg         // Particle type PDG code
+      - uint32_t               zonePattern // Bitmask of zones for the track
+    OneToOneRelations:
+      - edm4na64::TrackFitInfo fitInfo     // General information of track fitting results  
+    OneToManyRelations:
+      - edm4na64::ScoreFitInfo scores // Scores defining the track
+    ExtraCode:
+      declaration: |
+        /// Number of scores in a track
+        auto nscores() const { return scores_size(); }
+
+  ############## Event #########################################################
+  # Main event structure declaration
+  #  
+  # The event structure is the principal declaration affecting every handler
+  # within the pipeline. Handlers take and modify the data from/within an event
+  # instance, by accessing its members.
+  #  
+
+  edm4na64::MCTruthInfo:
+    Description: 'Singular event field for Monte-Carlo true values.
+                  These structure was copied from "official reconstruction" 
+                  and corresponds to field found in MK MC package.'
+    Author: 'R. Dusaev, A. Gianelle'   
+    Members:
+      - double            weight             // A statistical weight of the event
+      - edm4hep::Vector3f beamPosition       // Initial position
+      - edm4hep::Vector3f beamMomentum       // Initial momentum
+      - double            beamE0             // Initial full E (TOCHECK redundant?)
+      - edm4hep::Vector3f ecalEntryPoisition // Initial full E on Ecal (TOCHECK redundant?)
+      - int32_t           beamPDG            // PDG code of initializing particle
+
+
+  edm4na64::Vertex:
+    Description: 'Production and/or decay vertex.    
+                  This vertex usually corresponds to various Dark Matter 
+                  production spatial point (MC-modelled or reconstructed).'
+    Author: 'R. Dusaev, A. Gianelle' 
+    Members:
+      - double            E0 [GeV]       // Energy before DM producton [GeV]"
+      - double            E [GeV]        // Energy after DM production [GeV]"
+      - edm4hep::Vector3f position      // DM production vertex
+      - edm4hep::Vector3f decayPosition // DM decay position
+      - edm4hep::Vector4f lvEm          // Lorentz vector of electron in DM decay, e mas is 4th
+      - edm4hep::Vector4f lvEp          // Lorentz vector of positron in DM decay, e mas is 4th
+      - int32_t           initPDG        // PDG code of the initializing particle (MC typically)
+      - int32_t           DMTRID1        // TOCHECK unknown MK's MC datum  
+      - int32_t           DMTRID2        // TOCHECK unknown MK's MC datum
+
+  edm4na64::Event:
+    Description: "This struct maps hit instances over various identification schemes for
+                  faster access. Instance of this structure is the major subject of
+                  modification and data retrieval for all the handlers composing the pipeline."
+    Author: 'R. Dusaev, A. Gianelle'
+    Members:
+      - uint64_t                    id              // Event's unique identifier
+      - uint16_t                    trigger         // Trigger code of this event
+      - uint16_t                    evType          // Event type code
+      - std::array<uint32_t, 2>     time {0,0}      // Event time represented by pair. <seconds since epoch, usec>
+      - double                      masterTime [ns] // Relative event master time, [ns]"
+    OneToOneRelations:
+      - edm4na64::MCTruthInfo       mcTruth         // "True" MC data            
+    OneToManyRelations:
+      - edm4na64::SADCHit           sadcHits        // SADC-based detectors hits (ECAL, WCAL, HCAL, VETO, etc.)
+      - edm4na64::APVHit            apvHits         // APV-based detectors hits (MuMegas, GEMs)
+      - edm4na64::StwTDCHit         stwtdcHits      // NA64TDC-based detectors hits (STRAW)
+      - edm4na64::F1Hit             f1Hits          // F1-based detectors hits (BMS, etc.)
+      - edm4na64::CaloHit           caloHits        // Energy deposition in calorimetric detectors (e.g. ECAL, WCAL, HCAL, etc)
+      - edm4na64::APVCluster        apvClusters     // 1D clusters (contains references to the APV hits)
+      - edm4na64::TrackScore        trackScores     // Track point candidates collection
+      - edm4na64::Track             tracks          // Collection of reconstructed tracks
+      - edm4na64::Vertex            vertices        // Collection of vertices -- particle's birth/decay spatial points
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
