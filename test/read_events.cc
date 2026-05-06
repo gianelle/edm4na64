@@ -13,7 +13,7 @@ using ROOTReader = podio::ROOTFrameReader;
 #endif
 
 int main() {
-//  read_events<podio::ROOTReader>("edm4na64_events.root");
+  read_events<podio::ROOTReader>("edm4na64_events.root");
 
   return 0;
 }

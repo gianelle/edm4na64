@@ -48,16 +48,17 @@ datatypes:
     Description: 'Representation of a hit on APV-based detector entity.'
     Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
     Members:
-      - double maxCharge // Hit max charge wrt APV waveform
-      - double timeRise  // Time of rising front TODO seemed to be not used; remove?
-      - double a02       // APV samples amplitude ratio a0/a2
-      - double a12       // APV samples amplitude ratio a1/a2
-      - double t02       // Tangent values of raising front, at a0 and a2 TODO More doc on it
-      - double t12       // Tangent values of raising front, at a1 and a2 TODO More doc on it
-      - double t02sigma  // Error estimation of tangent raising front a0-a2 TODO More doc on it
-      - double t12sigma  // Error estimation of tangent raising front a1-a2 TODO More doc on it
-      - double time      // Estimated hit time, [SADC sample num]
-      - double timeError // Error of hit time estimation, [SADC sample num]
+      - uint32_t             id        // naturalKey TODO define it --> detID!
+      - double               maxCharge // Hit max charge wrt APV waveform
+      - double               timeRise  // Time of rising front TODO seemed to be not used; remove?
+      - double               a02       // APV samples amplitude ratio a0/a2
+      - double               a12       // APV samples amplitude ratio a1/a2
+      - double               t02       // Tangent values of raising front, at a0 and a2 TODO More doc on it
+      - double               t12       // Tangent values of raising front, at a1 and a2 TODO More doc on it
+      - double               t02sigma  // Error estimation of tangent raising front a0-a2 TODO More doc on it
+      - double               t12sigma  // Error estimation of tangent raising front a1-a2 TODO More doc on it
+      - double               time      // Estimated hit time, [SADC sample num]
+      - double               timeError // Error of hit time estimation, [SADC sample num]
     OneToOneRelations:
       - edm4na64::RawDataAPV rawData // Hit raw data (as got from DDD digit)
     
@@ -65,6 +66,7 @@ datatypes:
     Description: 'Represents a group of hits on APV-based detector.'
     Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
     Members:
+      - uint32_t          id             // naturalKey TODO define it --> PlaneKey!
       - double            position       // Coordinate of cluster's center, wire number units
       - double            positionError  // Coordinate uncertainty, wire units
       - double            charge         // Cluster charge sum (unnormed), sum of all hit's amplitude measurements
@@ -100,11 +102,12 @@ datatypes:
     Description: "Representation of a hit on F1-based detector entity"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
-      - double  hitPosition // Reconstructed position of hit
+      - uint32_t            id          // naturalKey TODO define it --> detID!
+      - double              hitPosition // Reconstructed position of hit
     OneToOneRelations:  
-      - edm4na64::RawDataF1 rawData // Raw data as was decoded from DAQ for F1 chip
+      - edm4na64::RawDataF1 rawData     // Raw data as was decoded from DAQ for F1 chip
 
-  ############## SADN detector #########################################################
+  ############## SADC detector #########################################################
   # The NA64/NA58 standard sampling ADC chip (SADC) performs sampling
   # analog-to-digital conversion of many detectors signals. Once triggered, it
   # measures the voltage on its input 16 times with time interval of 25ns.
@@ -182,12 +185,12 @@ datatypes:
 
   edm4na64::WaveForm:
     Description: "WaveForm data. \n
-                  SADC waveform -- always 32 samples in NA64, two baselines (pedestals), 12.5ns interval \
-                  Genova WaveBoard sampling ADC, variable number of samples, variable sampling time"
+                    SADC waveform -- always 32 samples in NA64, two baselines (pedestals), 12.5ns interval \n
+                    Genova WaveBoard sampling ADC, variable number of samples, variable sampling time"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
       - float                 samplingTime {12.5} [ns] // ns per sample
-      - std::array<float, 2>  pedestals  {0,0}       // ADC amplitude pedestal values (zeroes) for even and odd sampler.
+      - std::array<float, 2>  pedestals  {0,0}         // ADC amplitude pedestal values (zeroes) for even and odd sampler.
       - float                 baseline                 // baseline value for
     VectorMembers:
       - float                 wave                     // Array of measured waveform samples 
@@ -226,6 +229,7 @@ datatypes:
     Description: "Representation of a hit on SADC-based detector entity."
     Author: 'R. Dusaev, A. Gianelle'
     Members:
+      - uint32_t              id        // naturalKey TODO define it --> detID!    
       - float                 eDep      // Reconstructed energy deposition, MeV.
       - float                 eDepError // Error estimation of reconstructed energy deposition (sigma), MeV
       - float                 time      // Reconstructed time of hit, nanoseconds
@@ -263,6 +267,7 @@ datatypes:
     Description: "Hit on straw detector"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
+      - uint32_t                id            // naturalKey TODO define it --> PlaneKey!    
       - float                   distance      // estimated by time (ambiguous) distance from the wire (isochrone surface radius)
       - float                   distanceError // error of distance estimation
       - float                   correctedTime // Time corrected for T0
@@ -275,20 +280,21 @@ datatypes:
   # to facilitate pile-up separation.
 
   edm4na64::CaloHit:
-    Description: 'Represents a group of SADC hits in the calorimeter.
-                  May imply different hit grouping strategies. Associated hits may be
-                  considered partially (for instance, if time cluster label is set for the
-                  this tCaloHit instamce, probably only eponymous pulses were considered
-                  in the hit).'
+    Description: 'Represents a group of SADC hits in the calorimeter. \n
+                    May imply different hit grouping strategies. Associated hits may be \n
+                    considered partially (for instance, if time cluster label is set for the \n
+                    this tCaloHit instamce, probably only eponymous pulses were considered \n
+                    in the hit).'
     Author: 'R. Dusaev, A. Gianelle'
     Members:
-      - int     timeClusterLabel // Time cluster label, may be not set
-      - double  eDep             // Energy deposition sum, MeV
-      - double  eDepError        // Estimated energy deposition's error
-      - double  time             // Mean time
-      - double  timeStddev       // Time standard deviation (of hits)
+      - uint32_t          id               // naturalKey TODO define it --> StationKey!    
+      - int               timeClusterLabel // Time cluster label, may be not set
+      - double            eDep             // Energy deposition sum, MeV
+      - double            eDepError        // Estimated energy deposition's error
+      - double            time             // Mean time
+      - double            timeStddev       // Time standard deviation (of hits)
     OneToManyRelations:
-      - edm4na64::SADCHit hits // Elementary hits summed up into this calo hit
+      - edm4na64::SADCHit hits             // Elementary hits summed up into this calo hit
     ExtraCode:
       declaration: |
         /// Returns number of SADC hits
@@ -314,16 +320,17 @@ datatypes:
     Description: "True parameters of the generated track score"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
+      - uint32_t          id             // naturalKey TODO define it --> StationKey!     
       - edm4hep::Vector3f globalPosition // Unsmeared true intersection 3D point that generated this score
       - int               geant4TrackID  // (only for MC) Geant4 track ID for this score
 
   edm4na64::TrackScore:
-    Description: "A particle hit point representation
-                 _Track score_ is a helper object representing set of ra measurement (or
-                 set of raw measurements) bound together to represent a spatial item that
-                 can become a subject of track fitting.
-                 Keeps references to raw measurements (hits) together with DRS-normalized
-                 coordinates and uncertainties."
+    Description: "A particle hit point representation. \n
+                   _Track score_ is a helper object representing set of ra measurement (or \n
+                   set of raw measurements) bound together to represent a spatial item that \n
+                   can become a subject of track fitting. \n
+                   Keeps references to raw measurements (hits) together with DRS-normalized \n
+                   coordinates and uncertainties."
     Author: 'R. Dusaev, A. Gianelle'
     Members:
       - edm4hep::Vector3f               lR       // Local track (point) coordinates, up to three u, v, w, normalized to (-0.5/0.5)"
@@ -355,10 +362,10 @@ datatypes:
         auto wE() { return getLRErr()[2]; }
 
   edm4na64::ScoreFitInfo:
-    Description: "Track-to-score association object
-                  Association (shimming) class binding track score with certain track object.
-                  Maintains set of information related to local fit object i.e. local coordinates,
-                  tangents, etc."
+    Description: "Track-to-score association object \n
+                    Association (shimming) class binding track score with certain track object. \n
+                    Maintains set of information related to local fit object i.e. local coordinates, \n
+                    tangents, etc."
     Author: 'R. Dusaev, A. Gianelle'
     Members:
       - edm4hep::Vector3f    lR      // Local track fit coordinates, metric
@@ -416,13 +423,14 @@ datatypes:
     Description: "Particle track representation"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
+      - uint32_t          id               // naturalKey TODO define it --> StationKey!     
       - double                 momentum    // Initial momentum of the track
       - int                    pdg         // Particle type PDG code
       - uint32_t               zonePattern // Bitmask of zones for the track
     OneToOneRelations:
       - edm4na64::TrackFitInfo fitInfo     // General information of track fitting results  
     OneToManyRelations:
-      - edm4na64::ScoreFitInfo scores // Scores defining the track
+      - edm4na64::ScoreFitInfo scores      // Scores defining the track
     ExtraCode:
       declaration: |
         /// Number of scores in a track
@@ -437,9 +445,9 @@ datatypes:
   #  
 
   edm4na64::MCTruthInfo:
-    Description: 'Singular event field for Monte-Carlo true values.
-                  These structure was copied from "official reconstruction" 
-                  and corresponds to field found in MK MC package.'
+    Description: 'Singular event field for Monte-Carlo true values. \n
+                    These structure was copied from "official reconstruction" \n
+                    and corresponds to field found in MK MC package.'
     Author: 'R. Dusaev, A. Gianelle'   
     Members:
       - double            weight             // A statistical weight of the event
@@ -451,28 +459,29 @@ datatypes:
 
 
   edm4na64::Vertex:
-    Description: 'Production and/or decay vertex.    
-                  This vertex usually corresponds to various Dark Matter 
-                  production spatial point (MC-modelled or reconstructed).'
+    Description: 'Production and/or decay vertex. \n    
+                    This vertex usually corresponds to various Dark Matter \n 
+                    production spatial point (MC-modelled or reconstructed).'
     Author: 'R. Dusaev, A. Gianelle' 
     Members:
+      - uint32_t          id             // naturalKey TODO define it --> VertexID! 
       - double            E0 [GeV]       // Energy before DM producton [GeV]"
       - double            E [GeV]        // Energy after DM production [GeV]"
-      - edm4hep::Vector3f position      // DM production vertex
-      - edm4hep::Vector3f decayPosition // DM decay position
-      - edm4hep::Vector4f lvEm          // Lorentz vector of electron in DM decay, e mas is 4th
-      - edm4hep::Vector4f lvEp          // Lorentz vector of positron in DM decay, e mas is 4th
+      - edm4hep::Vector3f position       // DM production vertex
+      - edm4hep::Vector3f decayPosition  // DM decay position
+      - edm4hep::Vector4f lvEm           // Lorentz vector of electron in DM decay, e mas is 4th
+      - edm4hep::Vector4f lvEp           // Lorentz vector of positron in DM decay, e mas is 4th
       - int32_t           initPDG        // PDG code of the initializing particle (MC typically)
       - int32_t           DMTRID1        // TOCHECK unknown MK's MC datum  
       - int32_t           DMTRID2        // TOCHECK unknown MK's MC datum
 
   edm4na64::Event:
-    Description: "This struct maps hit instances over various identification schemes for
-                  faster access. Instance of this structure is the major subject of
-                  modification and data retrieval for all the handlers composing the pipeline."
+    Description: "This struct maps hit instances over various identification schemes for \n
+                    faster access. Instance of this structure is the major subject of \n
+                    modification and data retrieval for all the handlers composing the pipeline."
     Author: 'R. Dusaev, A. Gianelle'
     Members:
-      - uint64_t                    id              // Event's unique identifier
+      - uint64_t                    id              // Event's unique identifier TODO define it --> EventID!
       - uint16_t                    trigger         // Trigger code of this event
       - uint16_t                    evType          // Event type code
       - std::array<uint32_t, 2>     time {0,0}      // Event time represented by pair. <seconds since epoch, usec>
