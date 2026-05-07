@@ -36,7 +36,7 @@ datatypes:
     Description:  'Raw data of APV digit'
     Author: 'A. Shevelev, R. Dusaev, A. Gianelle'
     Members:
-      - uint16_t               wireNo      //  Triggered wire number (detector's channel) TODO is default std::numeric_limits<uint16_t>::max() needed?
+      - uint16_t               wireNo      // Triggered wire number (detector's channel) TODO is default std::numeric_limits<uint16_t>::max() needed?
       - uint16_t               chip        // chip ID wrt DDD DAQ
       - uint16_t               srcID       // source ID wrt DDD DAQ
       - uint16_t               adcID       // adc ID wrt DDD DAQ
@@ -249,7 +249,7 @@ datatypes:
       - uint16_t time        // Time on a wire (internal units)
       - double   timeDecoded // Time in ns with the respect to trigger time
 
-  emd4na64::StwMCInfo:
+  edm4na64::StwMCInfo:
     Description: "MC information for a Straw hit"
     Author: 'R. Dusaev, A. Gianelle'
     Members:
@@ -273,7 +273,7 @@ datatypes:
       - float                   correctedTime // Time corrected for T0
     OneToOneRelations:
       - edm4na64::StwTDCRawData rawData       // Raw data of the straw hit
-      - emd4na64::StwMCInfo     mcInfo        // A "true" MC information          
+      - edm4na64::StwMCInfo     mcInfo        // A "true" MC information          
 
   ############## CALO detector #########################################################
   # The calorimeter assembly energy deposition sum. May be not unique on event
