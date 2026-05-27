@@ -9,10 +9,12 @@
 #include <podio/ROOTFrameWriter.h>
 namespace podio {
 using ROOTWriter = podio::ROOTFrameWriter;
+
 }
 #endif
 
 int main(int argc, char *argv[]) {
 
   write<podio::ROOTWriter>("edm4na64_events.root");
+
 }

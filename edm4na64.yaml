@@ -1,6 +1,6 @@
 ### Data Model NA64
 ---
-schema_version: 100
+schema_version: 001
 
 options:
   # should getters / setters be prefixed with get / set?
@@ -157,8 +157,8 @@ datatypes:
       - float  eDep              // Energy estimate for this pulse
       - float  eDepErr           // Error of energy estimate for this pulse
       - double chi2              // Peak fitting chi2
-      - int    ndf               //  Peak fitting NDF
-      - int    lastFitStatusCode //  Encoded fit status (contextual).
+      - int    ndf               // Peak fitting NDF
+      - int    lastFitStatusCode // Encoded fit status (contextual).
     OneToOneRelations:  
       - edm4na64::MoyalSADCWfFitParameters moyalFit // Results of peak fitting with Moyal function.  
     ExtraCode:
@@ -283,7 +283,7 @@ datatypes:
     Description: 'Represents a group of SADC hits in the calorimeter. \n
                     May imply different hit grouping strategies. Associated hits may be \n
                     considered partially (for instance, if time cluster label is set for the \n
-                    this tCaloHit instamce, probably only eponymous pulses were considered \n
+                    this tCaloHit instace, probably only eponymous pulses were considered \n
                     in the hit).'
     Author: 'R. Dusaev, A. Gianelle'
     Members:
@@ -308,7 +308,7 @@ datatypes:
     Author: 'R. Dusaev, A. Gianelle'
     Members:
       - float                distance [cm]      // Estimated distance, cm
-      - float                distanceError [cm] //  Error of distance estimation, cm
+      - float                distanceError [cm] // Error of distance estimation, cm
       - float                maxDistance [cm]   // max distance (cm) from the wire; typically a wire's stride
       - std::array<float, 6> wireCoordinates    // wire spatial coordinates (two endpoints)
       - float                sideHitUError      // unbiased error on other side of isochrone
@@ -333,9 +333,9 @@ datatypes:
                    coordinates and uncertainties."
     Author: 'R. Dusaev, A. Gianelle'
     Members:
-      - edm4hep::Vector3f               lR       // Local track (point) coordinates, up to three u, v, w, normalized to (-0.5/0.5)"
-      - edm4hep::Vector3f               gR       // Assumed global coordinates of track point, MRS x, y, z, [cm]"
-      - edm4hep::Vector3f               lRErr    // Local track uncertainties, up to three u, v, w, normalized"
+      - edm4hep::Vector3f               lR       // Local track (point) coordinates, up to three u, v, w, normalized to (-0.5/0.5)
+      - edm4hep::Vector3f               gR       // Assumed global coordinates of track point, MRS x, y, z, [cm]
+      - edm4hep::Vector3f               lRErr    // Local track uncertainties, up to three u, v, w, normalized
       - float                           time     // Hit time, global to event (averaged on hits or provided by MC)
     OneToOneRelations:
       - edm4na64::DriftDetScoreFeatures driftFts // Supplementary data for drift detectors.
@@ -465,8 +465,8 @@ datatypes:
     Author: 'R. Dusaev, A. Gianelle' 
     Members:
       - uint32_t          id             // naturalKey TODO define it --> VertexID! 
-      - double            E0 [GeV]       // Energy before DM producton [GeV]"
-      - double            E [GeV]        // Energy after DM production [GeV]"
+      - double            E0 [GeV]       // Energy before DM producton [GeV]
+      - double            E [GeV]        // Energy after DM production [GeV]
       - edm4hep::Vector3f position       // DM production vertex
       - edm4hep::Vector3f decayPosition  // DM decay position
       - edm4hep::Vector4f lvEm           // Lorentz vector of electron in DM decay, e mas is 4th
@@ -485,7 +485,7 @@ datatypes:
       - uint16_t                    trigger         // Trigger code of this event
       - uint16_t                    evType          // Event type code
       - std::array<uint32_t, 2>     time {0,0}      // Event time represented by pair. <seconds since epoch, usec>
-      - double                      masterTime [ns] // Relative event master time, [ns]"
+      - double                      masterTime [ns] // Relative event master time, [ns]
     OneToOneRelations:
       - edm4na64::MCTruthInfo       mcTruth         // "True" MC data            
     OneToManyRelations:

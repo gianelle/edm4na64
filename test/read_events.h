@@ -4,6 +4,7 @@
 #define EDM4NA64_TEST_READ_EVENTS_H__
 
 // test data model
+#include "edm4na64/EventCollection.h"
 #include "edm4na64/CaloHitCollection.h"
 
 // podio specific includes
@@ -17,32 +18,41 @@
 #include <vector>
 
 
-void processEvent(const podio::Frame& event, bool verboser, unsigned eventNum) {
-  auto& raw_hits = event.get<edm4na64::CaloHitCollection>("CaloHit");
+void processEvent(const podio::Frame& event, unsigned eventNum) {
+  auto& evt = event.get<edm4na64::EventCollection>("Events");
+  /*
+  for (auto i = cluster.Hits_begin(), \
+         end = cluster.Hits_end(); i!=end; ++i){
+      std::cout << i->energy() << std::endl;
+    } 
+  auto& raw_hits = <edm4na64::CaloHitCollection>evt[0].getCaloHits();
+  */
 
-#if PODIO_BUILD_VERSION >= PODIO_VERSION(1, 6, 0)
-  if (raw_hits.hasID()) {
-#else
-  if (raw_hits.isValid()) {
-#endif
-
+    std::cout << "Process event: " << evt[0].getId() << " " << std::endl;
+    const auto& calo_hits = evt[0].getCaloHits();
+    evt.print();
     //-------- print particles for debugging:
 
-    std::cout << "\n collection:  "
-              << "CaloHit"
-              << " of type " << raw_hits.getValueTypeName() << "\n\n"
-              << raw_hits << std::endl;
+    std::cout << "\n Calo collection: " 
+              << " has " << calo_hits.size() << " elements"  << std::endl;
     //-------------------------------
 
+   for (auto i = calo_hits.begin(), 
+         end = calo_hits.end(); i!=end; ++i){
+      std::cout << i->getEDep() << std::endl;
+    }
+    
+
     // check a few things (to be completed ...)
-    auto raw_hit = raw_hits[0];
-    if (raw_hit.getId() != 42)
-      throw std::runtime_error("wrong ID for first hit - should be 42 ");
+    if ( evt[0].getTrigger() != 2026 )
+      throw std::runtime_error("wrong Trigger for the event - should be 2026 ");
 
-  } else {
-    throw std::runtime_error("Collection 'CaloHit' should be present");
-  }
-
+   /* 
+   for (auto i = cluster.Hits_begin(), \
+         end = cluster.Hits_end(); i!=end; ++i){
+      std::cout << i->energy() << std::endl;
+    }
+   */
   //===============================================================================
 
   const auto& evtType = event.getParameter<std::string>("EventType");
@@ -51,6 +61,7 @@ void processEvent(const podio::Frame& event, bool verboser, unsigned eventNum) {
 #else
   std::cout << "Event Type: " << evtType.value() << std::endl;
 #endif
+
 }
 
 template <typename ReaderT>
@@ -62,7 +73,7 @@ void read_events(const std::string& filename) {
   for (unsigned i = 0; i < nEvents; ++i) {
     std::cout << "reading event " << i << std::endl;
     const auto event = podio::Frame(reader.readNextEntry("events"));
-    processEvent(event, true, i);
+    processEvent(event, i);
   }
 }
 
