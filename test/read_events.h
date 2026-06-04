@@ -39,7 +39,7 @@ void processEvent(const podio::Frame& event, unsigned eventNum) {
 
    for (auto i = calo_hits.begin(), 
          end = calo_hits.end(); i!=end; ++i){
-      std::cout << i->getEDep() << std::endl;
+      std::cout << "Hit: " << i->getId() << " has energy: " << i->getEDep() << std::endl;
     }
     
 

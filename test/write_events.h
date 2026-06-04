@@ -35,12 +35,12 @@ void write(std::string outfilename) {
     event.setTrigger(2026);
     event.setEvType(0x200);   
      
-    int randomHits = std::rand() % 13;
+    int randomHits = std::rand() % 7;
     auto raw_hits = edm4na64::CaloHitCollection();
     for (unsigned j = 0; j < randomHits; ++j) {
       
       auto raw_hit = raw_hits.create();
-      raw_hit.setId(j);
+      raw_hit.setId(10*i+j);
       raw_hit.setEDep(10*j);
       raw_hit.setEDepError(1.23);
       raw_hit.setTime(125497);
@@ -55,8 +55,8 @@ void write(std::string outfilename) {
               << " of type " << events.getValueTypeName() << "\n\n"
               << events << " Hits \n" << raw_hits << std::endl;
 
-    eframe.put(std::move(events), "Events");
     eframe.put(std::move(raw_hits), "CaloHits");
+    eframe.put(std::move(events), "Events");
     eframe.putParameter("EventType", "test");
     writer.writeFrame(eframe, "events");
     

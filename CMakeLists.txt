@@ -6,9 +6,9 @@ cmake_minimum_required(VERSION 3.12)
 project(EDM4NA64
   LANGUAGES CXX)
 
-SET( ${PROJECT_NAME}_VERSION_MAJOR 1 )
+SET( ${PROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${PROJECT_NAME}_VERSION_MINOR 0 )
-SET( ${PROJECT_NAME}_VERSION_PATCH 0 )
+SET( ${PROJECT_NAME}_VERSION_PATCH 1 )
 SET( ${PROJECT_NAME}_VERSION  "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}" )
 
 # Verify that schema version in edm4na64.yaml matches project version
@@ -87,6 +87,8 @@ PODIO_ADD_ROOT_IO_DICT(edm4na64Dict edm4na64 "${headers}" src/selection.xml
 add_library(edm4na64::edm4na64Dict ALIAS edm4na64Dict )
 
 list(APPEND EDM4NA64_INSTALL_LIBS edm4na64 edm4na64Dict)
+
+enable_testing()
 
 add_subdirectory(utils)
 add_subdirectory(test)
