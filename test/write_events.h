@@ -22,7 +22,6 @@ void write(std::string outfilename) {
 
   unsigned nevents = 10;
 
-  //auto events = edm4na64::EventCollection();
   // =============== event loop ================================
   for (unsigned i = 0; i < nevents; ++i) {
     auto eframe = podio::Frame();
@@ -39,16 +38,18 @@ void write(std::string outfilename) {
     auto raw_hits = edm4na64::CaloHitCollection();
     for (unsigned j = 0; j < randomHits; ++j) {
       
-      auto raw_hit = raw_hits.create();
+      edm4na64::ValErr energy;
+      energy.value = 10*j;
+      energy.error = 1.23;
+      edm4na64::ValErr time;
+      time.value = 123654;
+      time.error = 0.1*j;
+      auto raw_hit = raw_hits.create();      
       raw_hit.setId(10*i+j);
-      raw_hit.setEDep(10*j);
-      raw_hit.setEDepError(1.23);
-      raw_hit.setTime(125497);
-      raw_hit.setTimeStddev(1214.2);
+      raw_hit.setEDep(energy);
+      raw_hit.setTime(time);
       event.addToCaloHits(raw_hit);
     }
-
-    
 
     //-------- print hits for debugging:
     std::cout << "\n Event " << i
@@ -59,14 +60,9 @@ void write(std::string outfilename) {
     eframe.put(std::move(events), "Events");
     eframe.putParameter("EventType", "test");
     writer.writeFrame(eframe, "events");
-    
     //===============================================================================
 
   }
-  //eframe.put(std::move(events), "Events");
-  //eframe.putParameter("EventType", "test");
-  //writer.writeFrame(eframe, "events");
-
   writer.finish();
 }
 

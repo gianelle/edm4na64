@@ -14,8 +14,8 @@
 int main(int argc, char *argv[]) {
 
   write<podio::ROOTWriter>("edm4na64_events.root");
-//  write<podio::RNTupleWriter>("edm4na64_eventsRNT.root");
-//  write<podio::SIOWriter>("edm4na64_events.sio");
+  write<podio::RNTupleWriter>("edm4na64_eventsRNT.root");
+  //write<podio::SIOWriter>("edm4na64_events.sio");
 
 }
 

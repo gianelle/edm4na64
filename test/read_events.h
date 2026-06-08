@@ -20,13 +20,6 @@
 
 void processEvent(const podio::Frame& event, unsigned eventNum) {
   auto& evt = event.get<edm4na64::EventCollection>("Events");
-  /*
-  for (auto i = cluster.Hits_begin(), \
-         end = cluster.Hits_end(); i!=end; ++i){
-      std::cout << i->energy() << std::endl;
-    } 
-  auto& raw_hits = <edm4na64::CaloHitCollection>evt[0].getCaloHits();
-  */
 
     std::cout << "Process event: " << evt[0].getId() << " " << std::endl;
     const auto& calo_hits = evt[0].getCaloHits();
@@ -39,10 +32,9 @@ void processEvent(const podio::Frame& event, unsigned eventNum) {
 
    for (auto i = calo_hits.begin(), 
          end = calo_hits.end(); i!=end; ++i){
-      std::cout << "Hit: " << i->getId() << " has energy: " << i->getEDep() << std::endl;
+      std::cout << "Hit: " << i->getId() << " has energy: " << i->getEDep().value << std::endl;
     }
     
-
     // check a few things (to be completed ...)
     if ( evt[0].getTrigger() != 2026 )
       throw std::runtime_error("wrong Trigger for the event - should be 2026 ");
